@@ -18,7 +18,6 @@ node_modules/
 .env.production.local
 
 # Logs
-*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -31,14 +30,4 @@ yarn-error.log*
 
 # OS
 .DS_Store
-Thumbs.db
-
-# Debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Misc
-*.pem
-*.key
-*.cert 
+Thumbs.db 

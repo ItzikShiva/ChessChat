@@ -1,144 +1,86 @@
 # ChessChat
 
-A real-time chess game with chat functionality built with React, Node.js, and PostgreSQL.
+A real-time chess game with integrated chat functionality. Play chess against a computer opponent while chatting about the game.
 
 ## Features
 
-- Real-time chess gameplay
-- Chat functionality
-- User authentication
-- Dark/Light theme
-- Friend system
-- Game history and statistics
+- Real-time chess gameplay against computer opponent
+- Integrated chat system
+- User authentication and profile management
+- Game statistics tracking
+- Coin-based wagering system
 
-## Prerequisites
+## Tech Stack
 
-- Node.js (v14 or higher)
-- PostgreSQL (v12 or higher)
-- npm or yarn
-
-## Setup
-
-1. Clone the repository:
-```bash
-git clone https://github.com/yourusername/chesschat.git
-cd chesschat
-```
-
-2. Install dependencies:
-```bash
-# Install backend dependencies
-cd src/backend
-npm install
-
-# Install frontend dependencies
-cd ../frontend
-npm install
-```
-
-3. Set up the database:
-```bash
-# Create a PostgreSQL database named 'chesschat'
-createdb chesschat
-
-# Run the database migrations
-cd ../backend
-npm run migrate
-```
-
-4. Configure environment variables:
-```bash
-# Backend
-cp src/backend/.env.example src/backend/.env
-# Edit the .env file with your configuration
-
-# Frontend
-cp src/frontend/.env.example src/frontend/.env
-# Edit the .env file with your configuration
-```
-
-## Development
-
-1. Start the backend server:
-```bash
-cd src/backend
-npm run dev
-```
-
-2. Start the frontend development server:
-```bash
-cd src/frontend
-npm start
-```
-
-The application will be available at:
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:4000
-
-## Testing
-
-```bash
-# Backend tests
-cd src/backend
-npm test
-
-# Frontend tests
-cd src/frontend
-npm test
-```
-
-## Deployment
-
-1. Build the frontend:
-```bash
-cd src/frontend
-npm run build
-```
-
-2. Deploy the backend:
-```bash
-cd src/backend
-npm run build
-```
+- Frontend: React.js with Material-UI
+- Backend: Node.js with Express
+- Database: MongoDB
+- Real-time Communication: Socket.IO
+- Authentication: JWT
 
 ## Project Structure
 
 ```
-chesschat/
+ChessChat/
 ├── src/
-│   ├── backend/           # Backend API
-│   │   ├── api/          # API routes and controllers
-│   │   ├── config/       # Configuration files
-│   │   ├── db/          # Database setup and migrations
-│   │   └── utils/       # Utility functions
-│   └── frontend/        # React frontend
-│       ├── components/  # React components
-│       ├── hooks/      # Custom React hooks
-│       ├── services/   # API services
-│       └── styles/     # CSS and theme files
-├── tests/              # Test files
-└── docs/              # Documentation
+│   ├── frontend/         # React frontend application
+│   │   ├── src/
+│   │   │   ├── components/
+│   │   │   ├── pages/
+│   │   │   └── ...
+│   │   └── package.json
+│   └── backend/         # Node.js backend server
+│       ├── config/
+│       ├── models/
+│       ├── routes/
+│       └── server.js
+└── package.json
 ```
+
+## Setup Instructions
+
+1. Clone the repository:
+   ```bash
+   git clone <repository-url>
+   cd ChessChat
+   ```
+
+2. Install dependencies:
+   ```bash
+   # Install backend dependencies
+   cd src/backend
+   npm install
+
+   # Install frontend dependencies
+   cd ../frontend
+   npm install
+   ```
+
+3. Set up environment variables:
+   Create `.env` files in both frontend and backend directories with the necessary environment variables.
+
+4. Start the application:
+   ```bash
+   # Start backend server (from backend directory)
+   npm start
+
+   # Start frontend development server (from frontend directory)
+   npm start
+   ```
+
+## Development
+
+- `main` branch: Production-ready code
+- `develop` branch: Development code
+- Feature branches: Created for new features
+- Bugfix branches: Created for bug fixes
 
 ## Contributing
 
-1. Create a new branch for your feature:
-```bash
-git checkout -b feature/your-feature-name
-```
-
-2. Make your changes and commit them:
-```bash
-git commit -m "Add your feature description"
-```
-
-3. Push to the branch:
-```bash
-git push origin feature/your-feature-name
-```
-
-4. Create a Pull Request
+1. Create a new branch for your feature/bugfix
+2. Make your changes
+3. Submit a pull request to the `develop` branch
 
 ## License
 
-MIT 
+MIT License 

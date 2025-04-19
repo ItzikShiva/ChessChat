@@ -1,67 +1,116 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import chatService from '../services/chatService';
+import React, { createContext, useState, useContext, useEffect } from 'react';
+import { io } from 'socket.io-client';
 
 const ChatContext = createContext();
 
-export const ChatProvider = ({ children }) => {
+export function ChatProvider({ children }) {
+  const [socket, setSocket] = useState(null);
+  const [messages, setMessages] = useState({});
+  const [typingUsers, setTypingUsers] = useState({});
   const [unreadCount, setUnreadCount] = useState(0);
-  const [activeChats, setActiveChats] = useState(new Set());
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
-    chatService.connect();
+    const token = localStorage.getItem('token');
+    if (token) {
+      const newSocket = io(process.env.REACT_APP_API_URL || 'http://localhost:5000', {
+        auth: { token }
+      });
 
-    const handleConnection = () => {
-      setIsConnected(true);
-    };
+      newSocket.on('connect', () => {
+        setIsConnected(true);
+      });
 
-    const handleDisconnection = () => {
-      setIsConnected(false);
-    };
+      newSocket.on('disconnect', () => {
+        setIsConnected(false);
+      });
 
-    chatService.socket?.on('connect', handleConnection);
-    chatService.socket?.on('disconnect', handleDisconnection);
+      newSocket.on('message', (data) => {
+        setMessages(prev => ({
+          ...prev,
+          [data.chatId]: [...(prev[data.chatId] || []), data]
+        }));
+        setUnreadCount(prev => prev + 1);
+      });
 
-    return () => {
-      chatService.socket?.off('connect', handleConnection);
-      chatService.socket?.off('disconnect', handleDisconnection);
-      chatService.disconnect();
-    };
+      newSocket.on('typing', (data) => {
+        setTypingUsers(prev => ({
+          ...prev,
+          [data.chatId]: data.userId
+        }));
+      });
+
+      newSocket.on('stopTyping', (data) => {
+        setTypingUsers(prev => {
+          const newTypingUsers = { ...prev };
+          delete newTypingUsers[data.chatId];
+          return newTypingUsers;
+        });
+      });
+
+      setSocket(newSocket);
+
+      return () => {
+        newSocket.close();
+      };
+    }
   }, []);
 
+  const sendMessage = (chatId, message) => {
+    if (socket) {
+      socket.emit('message', { chatId, message });
+    }
+  };
+
+  const startTyping = (chatId) => {
+    if (socket) {
+      socket.emit('typing', { chatId });
+    }
+  };
+
+  const stopTyping = (chatId) => {
+    if (socket) {
+      socket.emit('stopTyping', { chatId });
+    }
+  };
+
   const joinChat = (chatId) => {
-    setActiveChats((prev) => new Set([...prev, chatId]));
-    setUnreadCount((prev) => Math.max(0, prev - 1));
+    if (socket) {
+      socket.emit('joinChat', { chatId });
+    }
   };
 
   const leaveChat = (chatId) => {
-    setActiveChats((prev) => {
-      const newSet = new Set(prev);
-      newSet.delete(chatId);
-      return newSet;
-    });
-  };
-
-  const incrementUnreadCount = () => {
-    setUnreadCount((prev) => prev + 1);
+    if (socket) {
+      socket.emit('leaveChat', { chatId });
+    }
   };
 
   const value = {
+    socket,
+    messages,
+    typingUsers,
     unreadCount,
-    activeChats,
     isConnected,
+    sendMessage,
+    startTyping,
+    stopTyping,
     joinChat,
     leaveChat,
-    incrementUnreadCount,
+    setUnreadCount
   };
 
-  return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;
-};
+  return (
+    <ChatContext.Provider value={value}>
+      {children}
+    </ChatContext.Provider>
+  );
+}
 
-export const useChat = () => {
+export function useChat() {
   const context = useContext(ChatContext);
   if (!context) {
     throw new Error('useChat must be used within a ChatProvider');
   }
   return context;
-}; 
+}
