@@ -12,6 +12,8 @@ import Profile from './components/Profile';
 import GameBoard from './components/GameBoard';
 import Chat from './components/Chat';
 import Friends from './components/Friends';
+import TournamentList from './components/TournamentList';
+import PaymentForm from './components/PaymentForm';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
@@ -65,6 +67,22 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <Friends />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/tournaments"
+                element={
+                  <ProtectedRoute>
+                    <TournamentList />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/payment"
+                element={
+                  <ProtectedRoute>
+                    <PaymentForm />
                   </ProtectedRoute>
                 }
               />
