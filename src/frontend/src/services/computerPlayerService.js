@@ -43,10 +43,10 @@ class ComputerPlayerService {
       let maxEval = -Infinity;
       for (const move of moves) {
         this.chess.move(move);
-        const eval = this.minimax(depth - 1, alpha, beta, false);
+        const evaluation = this.minimax(depth - 1, alpha, beta, false);
         this.chess.undo();
-        maxEval = Math.max(maxEval, eval);
-        alpha = Math.max(alpha, eval);
+        maxEval = Math.max(maxEval, evaluation);
+        alpha = Math.max(alpha, evaluation);
         if (beta <= alpha) break;
       }
       return maxEval;
@@ -54,10 +54,10 @@ class ComputerPlayerService {
       let minEval = Infinity;
       for (const move of moves) {
         this.chess.move(move);
-        const eval = this.minimax(depth - 1, alpha, beta, true);
+        const evaluation = this.minimax(depth - 1, alpha, beta, true);
         this.chess.undo();
-        minEval = Math.min(minEval, eval);
-        beta = Math.min(beta, eval);
+        minEval = Math.min(minEval, evaluation);
+        beta = Math.min(beta, evaluation);
         if (beta <= alpha) break;
       }
       return minEval;
@@ -75,11 +75,11 @@ class ComputerPlayerService {
 
     for (const move of moves) {
       this.chess.move(move);
-      const eval = this.minimax(depth, -Infinity, Infinity, false);
+      const evaluation = this.minimax(depth, -Infinity, Infinity, false);
       this.chess.undo();
 
-      if (eval > bestEval) {
-        bestEval = eval;
+      if (evaluation > bestEval) {
+        bestEval = evaluation;
         bestMove = move;
       }
     }
