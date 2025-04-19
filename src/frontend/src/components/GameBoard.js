@@ -28,7 +28,7 @@ import {
   Send as SendIcon,
 } from '@mui/icons-material';
 import axios from 'axios';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../contexts/AuthContext';
 import io from 'socket.io-client';
 
 // Constants for piece values and position evaluation

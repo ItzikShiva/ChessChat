@@ -18,7 +18,7 @@ import {
   VisibilityOff,
   Login as LoginIcon
 } from '@mui/icons-material';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../contexts/AuthContext';
 
 const Login = () => {
   const navigate = useNavigate();

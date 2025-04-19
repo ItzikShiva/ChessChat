@@ -1,7 +1,7 @@
 import React from 'react';
 import { Routes as RouterRoutes, Route, Navigate } from 'react-router-dom';
 import { Box } from '@mui/material';
-import { useAuth } from './context/AuthContext';
+import { useAuth } from './contexts/AuthContext';
 import Navigation from './components/Navigation';
 import Login from './components/Login';
 import Register from './components/Register';
