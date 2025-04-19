@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import {
   Container,
   Paper,
@@ -8,15 +8,26 @@ import {
   Typography,
   Box,
   Alert,
+  Link,
+  CircularProgress,
+  InputAdornment,
+  IconButton,
 } from '@mui/material';
-import authService from '../services/authService';
+import {
+  Visibility,
+  VisibilityOff,
+  Login as LoginIcon
+} from '@mui/icons-material';
+import { useAuth } from '../context/AuthContext';
 
 const Login = () => {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [formData, setFormData] = useState({
     username: '',
     password: '',
   });
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -26,16 +37,27 @@ const Login = () => {
       ...prev,
       [name]: value,
     }));
+    // Clear error when user starts typing
+    if (error) setError('');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!formData.username.trim() || !formData.password.trim()) {
+      setError('Please fill in all fields');
+      return;
+    }
+
     setError('');
     setLoading(true);
 
     try {
-      await authService.login(formData.username, formData.password);
-      navigate('/profile');
+      const result = await login(formData.username, formData.password);
+      if (result.success) {
+        navigate('/games');
+      } else {
+        setError(result.error || 'Login failed. Please check your credentials.');
+      }
     } catch (err) {
       setError(err.message || 'Login failed. Please try again.');
     } finally {
@@ -43,75 +65,128 @@ const Login = () => {
     }
   };
 
+  const handleTogglePassword = () => {
+    setShowPassword(!showPassword);
+  };
+
   return (
-    <Container maxWidth="sm">
-      <Box
-        sx={{
-          marginTop: 8,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
+    <Container maxWidth="sm" sx={{ mt: { xs: 2, sm: 4, md: 8 } }}>
+      <Paper 
+        elevation={6} 
+        sx={{ 
+          p: { xs: 2, sm: 3, md: 4 },
+          borderRadius: 2,
+          bgcolor: 'background.paper',
+          backdropFilter: 'blur(20px)',
         }}
       >
-        <Paper
-          elevation={3}
+        <Box 
+          component="form" 
+          onSubmit={handleSubmit}
           sx={{
-            padding: 4,
             display: 'flex',
             flexDirection: 'column',
-            alignItems: 'center',
-            width: '100%',
+            gap: 2,
           }}
         >
-          <Typography component="h1" variant="h5">
-            Sign in to ChessChat
-          </Typography>
+          <Box sx={{ textAlign: 'center', mb: 2 }}>
+            <Typography variant="h4" component="h1" gutterBottom>
+              Welcome Back
+            </Typography>
+            <Typography variant="body1" color="text.secondary">
+              Sign in to continue to ChessChat
+            </Typography>
+          </Box>
+
           {error && (
-            <Alert severity="error" sx={{ mt: 2, width: '100%' }}>
+            <Alert 
+              severity="error" 
+              sx={{ 
+                mb: 2,
+                '& .MuiAlert-message': {
+                  width: '100%'
+                }
+              }}
+            >
               {error}
             </Alert>
           )}
-          <Box
-            component="form"
-            onSubmit={handleSubmit}
-            sx={{ mt: 1, width: '100%' }}
+
+          <TextField
+            required
+            fullWidth
+            label="Username"
+            name="username"
+            autoComplete="username"
+            value={formData.username}
+            onChange={handleChange}
+            disabled={loading}
+            autoFocus
+            sx={{ bgcolor: 'background.paper' }}
+          />
+
+          <TextField
+            required
+            fullWidth
+            label="Password"
+            name="password"
+            type={showPassword ? 'text' : 'password'}
+            autoComplete="current-password"
+            value={formData.password}
+            onChange={handleChange}
+            disabled={loading}
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    aria-label="toggle password visibility"
+                    onClick={handleTogglePassword}
+                    edge="end"
+                  >
+                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
+            sx={{ bgcolor: 'background.paper' }}
+          />
+
+          <Button
+            type="submit"
+            fullWidth
+            variant="contained"
+            size="large"
+            disabled={loading}
+            startIcon={loading ? <CircularProgress size={20} /> : <LoginIcon />}
+            sx={{ 
+              mt: 2,
+              height: 48,
+              fontSize: '1.1rem',
+            }}
           >
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              id="username"
-              label="Username"
-              name="username"
-              autoComplete="username"
-              autoFocus
-              value={formData.username}
-              onChange={handleChange}
-            />
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              name="password"
-              label="Password"
-              type="password"
-              id="password"
-              autoComplete="current-password"
-              value={formData.password}
-              onChange={handleChange}
-            />
-            <Button
-              type="submit"
-              fullWidth
-              variant="contained"
-              sx={{ mt: 3, mb: 2 }}
-              disabled={loading}
-            >
-              {loading ? 'Signing in...' : 'Sign In'}
-            </Button>
+            {loading ? 'Signing in...' : 'Sign In'}
+          </Button>
+
+          <Box sx={{ mt: 2, textAlign: 'center' }}>
+            <Typography variant="body2" color="text.secondary">
+              Don't have an account?{' '}
+              <Link 
+                component={RouterLink} 
+                to="/register"
+                sx={{
+                  fontWeight: 600,
+                  textDecoration: 'none',
+                  '&:hover': {
+                    textDecoration: 'underline',
+                  },
+                }}
+              >
+                Sign up now
+              </Link>
+            </Typography>
           </Box>
-        </Paper>
-      </Box>
+        </Box>
+      </Paper>
     </Container>
   );
 };

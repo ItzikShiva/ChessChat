@@ -1,19 +1,13 @@
 const mongoose = require('mongoose');
-require('dotenv').config();
-
-const MONGODB_URI = process.env.MONGODB_URI;
 
 const connectDB = async () => {
     try {
-        await mongoose.connect(MONGODB_URI);
-        console.log('MongoDB connected successfully');
+        const conn = await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/chesschat');
+        console.log(`MongoDB Connected: ${conn.connection.host}`);
     } catch (error) {
         console.error('MongoDB connection error:', error);
         process.exit(1);
     }
 };
 
-module.exports = {
-    connectDB,
-    MONGODB_URI
-}; 
+module.exports = { connectDB }; 

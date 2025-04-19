@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
 const { MONGODB_URI } = require('./config/db.config');
 
 // User Schema
@@ -10,6 +11,11 @@ const userSchema = new mongoose.Schema({
     coins: { type: Number, default: 0 },
     createdAt: { type: Date, default: Date.now }
 });
+
+// Add password comparison method
+userSchema.methods.comparePassword = async function(candidatePassword) {
+    return bcrypt.compare(candidatePassword, this.password);
+};
 
 // Game Schema
 const gameSchema = new mongoose.Schema({
@@ -40,11 +46,14 @@ async function testConnection() {
         await mongoose.connect(MONGODB_URI);
         console.log('Connected successfully!');
 
+        // Hash the password
+        const hashedPassword = await bcrypt.hash('test123', 10);
+
         // Create test user
         const testUser = new User({
             username: 'testplayer',
             email: 'test@chesschat.com',
-            password: 'test123',  // In production, this should be hashed
+            password: hashedPassword,
             rating: 1200,
             coins: 500
         });
@@ -58,10 +67,13 @@ async function testConnection() {
             console.log('Rating:', testUser.rating);
         } catch (err) {
             if (err.code === 11000) {
-                console.log('Test user already exists, updating coins...');
+                console.log('Test user already exists, updating password and coins...');
                 await User.findOneAndUpdate(
                     { username: 'testplayer' },
-                    { coins: 500 },
+                    { 
+                        password: hashedPassword,
+                        coins: 500 
+                    },
                     { new: true }
                 );
                 const updatedUser = await User.findOne({ username: 'testplayer' });

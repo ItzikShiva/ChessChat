@@ -9,6 +9,8 @@ const MainContainer = styled.div`
   min-height: 100vh;
   position: relative;
   font-family: 'Roboto', sans-serif;
+  background-color: #121212;
+  color: #ffffff;
 `;
 
 const ContentContainer = styled.div`
@@ -17,28 +19,11 @@ const ContentContainer = styled.div`
   padding: 20px;
   position: relative;
   z-index: 1;
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 10px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  backdrop-filter: blur(5px);
-  margin-top: 20px;
+  min-height: calc(100vh - 64px);
 `;
 
-const Header = styled.header`
-  background: rgba(0, 0, 0, 0.8);
-  padding: 1rem;
-  color: white;
-  position: relative;
-  z-index: 1;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-`;
-
-const HeaderContent = styled.div`
-  max-width: 1200px;
-  margin: 0 auto;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+const StyledAppBar = styled(AppBar)`
+  background-color: #1e1e1e !important;
 `;
 
 const Logo = styled.h1`
@@ -59,19 +44,31 @@ const Layout = ({ children }) => {
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    navigate('/');
   };
 
   return (
     <MainContainer>
       <ChessBackground />
-      <Header>
-        <HeaderContent>
-          <Logo>Chess<span>Chat</span></Logo>
+      <StyledAppBar position="static">
+        <Toolbar>
+          <Typography 
+            variant="h6" 
+            component={RouterLink} 
+            to="/" 
+            sx={{ 
+              flexGrow: 1, 
+              textDecoration: 'none', 
+              color: 'inherit',
+              fontWeight: 'bold'
+            }}
+          >
+            ChessChat
+          </Typography>
           {user ? (
             <>
-              <Button color="inherit" component={RouterLink} to="/friends">
-                Friends
+              <Button color="inherit" component={RouterLink} to="/game/new">
+                New Game
               </Button>
               <Button color="inherit" component={RouterLink} to="/chat">
                 Chat
@@ -93,8 +90,8 @@ const Layout = ({ children }) => {
               </Button>
             </>
           )}
-        </HeaderContent>
-      </Header>
+        </Toolbar>
+      </StyledAppBar>
       <ContentContainer>
         {children}
       </ContentContainer>
