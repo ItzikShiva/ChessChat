@@ -1,74 +1,90 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { ThemeProvider, CssBaseline } from '@mui/material';
-import { createTheme } from '@mui/material/styles';
-import { useTheme } from './hooks/useTheme';
+import { Routes, Route } from 'react-router-dom';
+import { ThemeProvider, createTheme } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
+import Layout from './components/Layout';
+import { createGlobalStyle } from 'styled-components';
 
 // Components
-import Layout from './components/Layout';
+import Home from './components/Home';
 import Login from './components/Login';
-import Profile from './components/Profile';
+import Register from './components/Register';
 import GameBoard from './components/GameBoard';
 import Chat from './components/Chat';
 import Friends from './components/Friends';
-import ProtectedRoute from './components/ProtectedRoute';
+import Profile from './components/Profile';
+
+// Contexts
+import { AuthProvider } from './contexts/AuthContext';
+import { ChatProvider } from './contexts/ChatContext';
+
+const theme = createTheme({
+  palette: {
+    mode: 'dark',
+    primary: {
+      main: '#90caf9',
+    },
+    secondary: {
+      main: '#f48fb1',
+    },
+    background: {
+      default: '#121212',
+      paper: '#1e1e1e',
+    },
+  },
+  components: {
+    MuiCssBaseline: {
+      styleOverrides: {
+        body: {
+          backgroundColor: '#121212',
+          color: '#ffffff'
+        }
+      }
+    }
+  }
+});
+
+const GlobalStyle = createGlobalStyle`
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: 'Roboto', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-color: #121212 !important;
+    color: #ffffff;
+  }
+
+  a {
+    text-decoration: none;
+    color: inherit;
+  }
+`;
 
 function App() {
-  const { theme, toggleTheme } = useTheme();
-  const muiTheme = createTheme({
-    palette: {
-      mode: theme,
-      primary: {
-        main: '#1976d2',
-      },
-      secondary: {
-        main: '#dc004e',
-      },
-    },
-  });
-
   return (
-    <ThemeProvider theme={muiTheme}>
+    <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Router>
-        <Layout toggleTheme={toggleTheme}>
-          <Routes>
-            <Route path="/" element={<Login />} />
-            <Route
-              path="/profile"
-              element={
-                <ProtectedRoute>
-                  <Profile />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/game/:gameId"
-              element={
-                <ProtectedRoute>
-                  <GameBoard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/chat"
-              element={
-                <ProtectedRoute>
-                  <Chat />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/friends"
-              element={
-                <ProtectedRoute>
-                  <Friends />
-                </ProtectedRoute>
-              }
-            />
-          </Routes>
-        </Layout>
-      </Router>
+      <AuthProvider>
+        <ChatProvider>
+          <GlobalStyle />
+          <Layout>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/game/:gameId" element={<GameBoard />} />
+              <Route path="/chat" element={<Chat />} />
+              <Route path="/friends" element={<Friends />} />
+              <Route path="/profile" element={<Profile />} />
+            </Routes>
+          </Layout>
+        </ChatProvider>
+      </AuthProvider>
     </ThemeProvider>
   );
 }
