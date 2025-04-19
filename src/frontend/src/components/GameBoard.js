@@ -1,172 +1,194 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
+import { Chess } from 'chess.js';
 import { Chessboard } from 'react-chessboard';
 import {
   Box,
   Paper,
   Typography,
   Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  List,
-  ListItem,
-  ListItemText,
-  Divider,
+  Grid,
+  CircularProgress
 } from '@mui/material';
-import { Chess } from 'chess.js';
-import chessService from '../services/chessService';
-import authService from '../services/authService';
+import { makeMove, getGame } from '../services/chessService';
+import computerPlayerService from '../services/computerPlayerService';
 
 const GameBoard = () => {
   const { gameId } = useParams();
-  const navigate = useNavigate();
-  const [game, setGame] = useState(new Chess());
-  const [gameState, setGameState] = useState(null);
-  const [moveHistory, setMoveHistory] = useState([]);
-  const [selectedSquare, setSelectedSquare] = useState('');
-  const [legalMoves, setLegalMoves] = useState([]);
-  const [gameOver, setGameOver] = useState(false);
-  const [gameStatus, setGameStatus] = useState('');
+  const [game, setGame] = useState(null);
+  const [chess, setChess] = useState(new Chess());
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [isComputerThinking, setIsComputerThinking] = useState(false);
   const gameRef = useRef(null);
 
   useEffect(() => {
     const loadGame = async () => {
       try {
-        const gameData = await chessService.getGame(gameId);
-        const history = await chessService.getGameHistory(gameId);
-        setGameState(gameData);
-        setMoveHistory(history);
-        setGame(new Chess(gameData.fen));
+        setIsLoading(true);
+        const gameData = await getGame(gameId);
+        setGame(gameData);
+        gameRef.current = gameData;
+        
+        if (gameData.fen) {
+          chess.load(gameData.fen);
+          setChess(new Chess(gameData.fen));
+        }
+
+        // If it's a computer game and it's the computer's turn
+        if (gameData.opponentType === 'computer' && 
+            gameData.currentPlayer === 'black' && 
+            !chess.isGameOver()) {
+          makeComputerMove();
+        }
       } catch (err) {
         setError(err.message || 'Failed to load game');
+      } finally {
+        setIsLoading(false);
       }
     };
 
-    if (gameId) {
-      loadGame();
-    }
+    loadGame();
   }, [gameId]);
 
-  const onSquareClick = (square) => {
-    if (gameOver) return;
+  const makeComputerMove = async () => {
+    if (!gameRef.current || gameRef.current.opponentType !== 'computer') return;
 
-    const currentUser = authService.getCurrentUser();
-    const isCurrentPlayer = gameState?.currentPlayer === currentUser.id;
+    setIsComputerThinking(true);
+    try {
+      // Set the computer difficulty
+      computerPlayerService.setDifficulty(gameRef.current.computerDifficulty);
+      
+      // Get the computer's move
+      const computerMove = computerPlayerService.makeMove(chess.fen());
+      
+      if (computerMove) {
+        // Make the move on the board
+        chess.move({
+          from: computerMove.from,
+          to: computerMove.to,
+          promotion: computerMove.promotion
+        });
+        setChess(new Chess(chess.fen()));
 
-    if (!isCurrentPlayer) {
-      setError("It's not your turn!");
-      return;
-    }
-
-    if (selectedSquare === square) {
-      setSelectedSquare('');
-      setLegalMoves([]);
-      return;
-    }
-
-    if (selectedSquare) {
-      const move = {
-        from: selectedSquare,
-        to: square,
-        promotion: 'q', // Always promote to queen for simplicity
-      };
-
-      try {
-        const newGame = new Chess(game.fen());
-        const result = newGame.move(move);
-
-        if (result) {
-          chessService.makeMove(gameId, move);
-          setGame(newGame);
-          setSelectedSquare('');
-          setLegalMoves([]);
-          checkGameStatus(newGame);
-        }
-      } catch (err) {
-        setError('Invalid move');
+        // Update the game state on the server
+        await makeMove(gameId, {
+          from: computerMove.from,
+          to: computerMove.to,
+          promotion: computerMove.promotion
+        });
       }
-    } else {
-      const moves = chessService.getLegalMoves(game, square);
-      if (moves.length > 0) {
-        setSelectedSquare(square);
-        setLegalMoves(moves);
+    } catch (err) {
+      setError('Computer move failed: ' + err.message);
+    } finally {
+      setIsComputerThinking(false);
+    }
+  };
+
+  const onDrop = async (sourceSquare, targetSquare) => {
+    try {
+      // Don't allow moves if it's a computer game and it's not the player's turn
+      if (gameRef.current?.opponentType === 'computer' && 
+          gameRef.current?.currentPlayer === 'black') {
+        return false;
       }
+
+      const move = chess.move({
+        from: sourceSquare,
+        to: targetSquare,
+        promotion: 'q' // Always promote to queen for simplicity
+      });
+
+      if (move === null) return false;
+
+      setChess(new Chess(chess.fen()));
+
+      // Update the game state on the server
+      await makeMove(gameId, {
+        from: sourceSquare,
+        to: targetSquare,
+        promotion: 'q'
+      });
+
+      // If it's a computer game, make the computer move after a short delay
+      if (gameRef.current?.opponentType === 'computer' && 
+          !chess.isGameOver()) {
+        setTimeout(makeComputerMove, 500);
+      }
+
+      return true;
+    } catch (err) {
+      setError(err.message || 'Move failed');
+      return false;
     }
   };
 
-  const checkGameStatus = (chessGame) => {
-    if (chessService.isGameOver(chessGame)) {
-      setGameOver(true);
-      setGameStatus(chessService.getGameStatus(chessGame));
-    }
-  };
+  if (isLoading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
 
-  const getGameStatusMessage = () => {
-    if (!gameOver) return null;
-
-    switch (gameStatus) {
-      case 'checkmate':
-        return 'Checkmate! Game Over';
-      case 'draw':
-        return 'Game ended in a draw';
-      case 'stalemate':
-        return 'Stalemate! Game Over';
-      case 'threefold-repetition':
-        return 'Game ended due to threefold repetition';
-      case 'insufficient-material':
-        return 'Game ended due to insufficient material';
-      default:
-        return 'Game Over';
-    }
-  };
+  if (error) {
+    return (
+      <Box sx={{ p: 2 }}>
+        <Typography color="error">{error}</Typography>
+      </Box>
+    );
+  }
 
   return (
-    <Box sx={{ display: 'flex', gap: 2, p: 2 }}>
-      <Paper elevation={3} sx={{ p: 2 }}>
-        <Chessboard
-          position={game.fen()}
-          onSquareClick={onSquareClick}
-          customSquareStyles={{
-            ...legalMoves.reduce((a, c) => {
-              a[c.to] = { backgroundColor: 'rgba(255, 255, 0, 0.4)' };
-              return a;
-            }, {}),
-            [selectedSquare]: { backgroundColor: 'rgba(255, 255, 0, 0.4)' },
-          }}
-        />
-        {error && (
-          <Typography color="error" sx={{ mt: 2 }}>
-            {error}
-          </Typography>
-        )}
-        {gameOver && (
-          <Typography variant="h6" sx={{ mt: 2 }}>
-            {getGameStatusMessage()}
-          </Typography>
-        )}
-      </Paper>
-
-      <Paper elevation={3} sx={{ p: 2, width: 300 }}>
-        <Typography variant="h6" gutterBottom>
-          Move History
-        </Typography>
-        <List>
-          {moveHistory.map((move, index) => (
-            <React.Fragment key={index}>
-              <ListItem>
-                <ListItemText
-                  primary={`${index + 1}. ${move.san}`}
-                  secondary={`by ${move.player}`}
-                />
-              </ListItem>
-              {index < moveHistory.length - 1 && <Divider />}
-            </React.Fragment>
-          ))}
-        </List>
-      </Paper>
+    <Box sx={{ p: 2 }}>
+      <Grid container spacing={3}>
+        <Grid item xs={12} md={8}>
+          <Paper elevation={3} sx={{ p: 2 }}>
+            <Box sx={{ position: 'relative' }}>
+              <Chessboard
+                position={chess.fen()}
+                onPieceDrop={onDrop}
+                boardWidth={600}
+              />
+              {isComputerThinking && (
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: 'rgba(0, 0, 0, 0.5)'
+                  }}
+                >
+                  <CircularProgress />
+                </Box>
+              )}
+            </Box>
+          </Paper>
+        </Grid>
+        <Grid item xs={12} md={4}>
+          <Paper elevation={3} sx={{ p: 2 }}>
+            <Typography variant="h6" gutterBottom>
+              Game Info
+            </Typography>
+            <Typography>
+              Status: {chess.isGameOver() ? 'Game Over' : 'In Progress'}
+            </Typography>
+            <Typography>
+              Current Turn: {chess.turn() === 'w' ? 'White' : 'Black'}
+            </Typography>
+            {game?.opponentType === 'computer' && (
+              <Typography>
+                Difficulty: {game.computerDifficulty}
+              </Typography>
+            )}
+          </Paper>
+        </Grid>
+      </Grid>
     </Box>
   );
 };
