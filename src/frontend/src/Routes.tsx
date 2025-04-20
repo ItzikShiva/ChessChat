@@ -1,6 +1,6 @@
 import React from 'react';
 import { Routes as RouterRoutes, Route, Navigate } from 'react-router-dom';
-import { Box } from '@mui/material';
+import { Box, CircularProgress } from '@mui/material';
 import { useAuth } from './contexts/AuthContext';
 import Navigation from './components/Navigation';
 import Login from './components/Login';
@@ -9,22 +9,37 @@ import Profile from './components/Profile';
 import Games from './components/Games';
 import GameBoard from './components/GameBoard';
 
-// Protected Route wrapper
-function ProtectedRoute({ children }) {
+interface ProtectedRouteProps {
+  children: React.ReactNode;
+}
+
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { user, loading } = useAuth();
   
   if (loading) {
-    return <Box>Loading...</Box>;
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
+        <CircularProgress />
+      </Box>
+    );
   }
   
-  return user ? children : <Navigate to="/login" />;
-}
+  return user ? <>{children}</> : <Navigate to="/login" replace />;
+};
 
-function Routes() {
+const Routes: React.FC = () => {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <Navigation />
-      <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
+      <Box 
+        component="main" 
+        sx={{ 
+          flexGrow: 1, 
+          p: 3,
+          display: 'flex',
+          flexDirection: 'column'
+        }}
+      >
         <RouterRoutes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
@@ -52,11 +67,12 @@ function Routes() {
               </ProtectedRoute>
             }
           />
-          <Route path="/" element={<Navigate to="/games" />} />
+          <Route path="/" element={<Navigate to="/games" replace />} />
+          <Route path="*" element={<Navigate to="/games" replace />} />
         </RouterRoutes>
       </Box>
     </Box>
   );
-}
+};
 
 export default Routes; 

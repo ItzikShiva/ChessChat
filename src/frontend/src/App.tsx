@@ -1,14 +1,15 @@
 import React from 'react';
-import { ThemeProvider, createTheme } from '@mui/material';
+import { ThemeProvider, createTheme, Theme } from '@mui/material';
 import CssBaseline from '@mui/material/CssBaseline';
 import { AuthProvider } from './contexts/AuthContext';
 import { ChatProvider } from './contexts/ChatContext';
 import Routes from './Routes';
+import { PaletteMode } from '@mui/material';
 
-// Create dark theme
-const darkTheme = createTheme({
+// Theme configuration
+const themeConfig = {
   palette: {
-    mode: 'dark',
+    mode: 'dark' as PaletteMode,
     primary: {
       main: '#1976d2',
       light: '#42a5f5',
@@ -22,7 +23,6 @@ const darkTheme = createTheme({
     background: {
       default: '#121212',
       paper: '#1e1e1e',
-      darker: '#0a0a0a',
     },
     text: {
       primary: '#ffffff',
@@ -107,9 +107,12 @@ const darkTheme = createTheme({
     h6: { fontWeight: 600 },
     button: { fontWeight: 600 },
   },
-});
+} as const;
 
-function App() {
+// Create theme instance
+const darkTheme: Theme = createTheme(themeConfig);
+
+const App: React.FC = () => {
   return (
     <ThemeProvider theme={darkTheme}>
       <CssBaseline />
@@ -120,6 +123,6 @@ function App() {
       </AuthProvider>
     </ThemeProvider>
   );
-}
+};
 
 export default App; 
