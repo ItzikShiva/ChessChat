@@ -1,21 +1,55 @@
 import React, { createContext, useState, useContext, useEffect, useMemo, useCallback } from 'react';
 import axios from 'axios';
-import PropTypes from 'prop-types';
+import { CircularProgress, Box } from '@mui/material';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
-// Create and export the context with initial shape
-export const AuthContext = createContext({
+interface User {
+  _id: string;
+  username: string;
+  email: string;
+  coins: number;
+  stats: {
+    wins: number;
+    losses: number;
+    draws: number;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface AuthResponse {
+  token: string;
+  user: User;
+}
+
+interface AuthContextType {
+  user: User | null;
+  loading: boolean;
+  error: string | null;
+  isAuthenticated: boolean;
+  login: (username: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  register: (userData: { username: string; email: string; password: string }) => Promise<{ success: boolean; error?: string }>;
+  logout: () => void;
+}
+
+interface AuthProviderProps {
+  children: React.ReactNode;
+}
+
+// Create context with initial shape
+export const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
+  error: null,
   isAuthenticated: false,
-  login: async () => {},
-  register: async () => {},
+  login: async () => ({ success: false }),
+  register: async () => ({ success: false }),
   logout: () => {},
 });
 
 // Custom hook for using auth context
-export function useAuth() {
+export function useAuth(): AuthContextType {
   const context = useContext(AuthContext);
   if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
@@ -24,10 +58,10 @@ export function useAuth() {
 }
 
 // Auth Provider component
-export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
+export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
 
   // Initialize auth state
   useEffect(() => {
@@ -35,7 +69,7 @@ export function AuthProvider({ children }) {
       try {
         const storedUser = localStorage.getItem('user');
         if (storedUser) {
-          const userData = JSON.parse(storedUser);
+          const userData = JSON.parse(storedUser) as AuthResponse;
           setUser(userData.user);
           axios.defaults.headers.common['Authorization'] = `Bearer ${userData.token}`;
           
@@ -49,7 +83,7 @@ export function AuthProvider({ children }) {
         }
       } catch (err) {
         console.error('Auth initialization error:', err);
-        setError(err.message);
+        setError(err instanceof Error ? err.message : 'An error occurred');
       } finally {
         setLoading(false);
       }
@@ -59,7 +93,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   // Handle API errors
-  const handleApiError = useCallback((error) => {
+  const handleApiError = useCallback((error: any) => {
     console.error('API Error:', error);
     const errorMessage = error.response?.data?.message || error.message || 'An error occurred';
     setError(errorMessage);
@@ -70,7 +104,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   // Handle successful auth
-  const handleAuthSuccess = useCallback((response) => {
+  const handleAuthSuccess = useCallback((response: { data: AuthResponse }) => {
     const { token, user: userData } = response.data;
     const authData = { token, user: userData };
     
@@ -83,9 +117,9 @@ export function AuthProvider({ children }) {
   }, []);
 
   // Login handler
-  const handleLogin = useCallback(async (username, password) => {
+  const handleLogin = useCallback(async (username: string, password: string) => {
     try {
-      const response = await axios.post(`${API_URL}/api/auth/login`, {
+      const response = await axios.post<AuthResponse>(`${API_URL}/api/auth/login`, {
         username,
         password
       });
@@ -96,9 +130,9 @@ export function AuthProvider({ children }) {
   }, [handleAuthSuccess, handleApiError]);
 
   // Register handler
-  const handleRegister = useCallback(async (userData) => {
+  const handleRegister = useCallback(async (userData: { username: string; email: string; password: string }) => {
     try {
-      const response = await axios.post(`${API_URL}/api/auth/register`, userData);
+      const response = await axios.post<AuthResponse>(`${API_URL}/api/auth/register`, userData);
       return handleAuthSuccess(response);
     } catch (error) {
       return handleApiError(error);
@@ -125,7 +159,11 @@ export function AuthProvider({ children }) {
   }), [user, loading, error, handleLogin, handleRegister, handleLogout]);
 
   if (loading) {
-    return null; // Or a loading spinner component
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
+        <CircularProgress />
+      </Box>
+    );
   }
 
   return (
@@ -133,14 +171,4 @@ export function AuthProvider({ children }) {
       {children}
     </AuthContext.Provider>
   );
-}
-
-// PropTypes for type checking
-AuthProvider.propTypes = {
-  children: PropTypes.node.isRequired,
-};
-
-// Default props
-AuthProvider.defaultProps = {
-  children: null,
-}; 
+} 
