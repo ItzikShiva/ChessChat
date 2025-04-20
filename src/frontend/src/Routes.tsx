@@ -1,5 +1,5 @@
 import React from 'react';
-import { Routes as RouterRoutes, Route, Navigate } from 'react-router-dom';
+import { Routes as RouterRoutes, Route, Navigate, useParams } from 'react-router-dom';
 import { Box, CircularProgress } from '@mui/material';
 import { useAuth } from './contexts/AuthContext';
 import Navigation from './components/Navigation';
@@ -25,6 +25,12 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   }
   
   return user ? <>{children}</> : <Navigate to="/login" replace />;
+};
+
+// Wrapper component to pass URL parameters to GameBoard
+const GameBoardWrapper: React.FC = () => {
+  const { gameId } = useParams<{ gameId: string }>();
+  return <GameBoard gameMode="player" providedGameId={gameId} />;
 };
 
 const Routes: React.FC = () => {
@@ -63,7 +69,7 @@ const Routes: React.FC = () => {
             path="/game/:gameId"
             element={
               <ProtectedRoute>
-                <GameBoard />
+                <GameBoardWrapper />
               </ProtectedRoute>
             }
           />
