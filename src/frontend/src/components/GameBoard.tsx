@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Chessboard } from 'react-chessboard';
 import { Chess } from 'chess.js';
 import {
@@ -71,21 +71,31 @@ interface Message {
 }
 
 const GameBoard: React.FC<GameBoardProps> = ({ 
-  gameMode = 'computer', 
-  wager = 20, 
-  opponent = 'Computer', 
-  difficulty = 'medium', 
-  providedGameId 
+  gameMode: propGameMode,
+  wager: propWager,
+  opponent: propOpponent,
+  difficulty: propDifficulty,
+  providedGameId: propGameId 
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const isTablet = useMediaQuery(theme.breakpoints.down('lg'));
   
   const { gameId } = useParams<{ gameId: string }>();
-  const currentGameId = useRef<string>(gameId || providedGameId || `game_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Get game settings from route state or props
+  const gameSettings = location.state || {
+    gameMode: propGameMode || 'computer',
+    wager: propWager || 0,
+    difficulty: propDifficulty || 'medium',
+    opponent: propOpponent || 'Computer'
+  };
+
+  const currentGameId = useRef<string>(gameId || propGameId || `game_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
   const { user } = useAuth();
   const userId = user?._id;
-  const navigate = useNavigate();
 
   // Game state
   const [game, setGame] = useState<Chess>(new Chess());
@@ -109,6 +119,14 @@ const GameBoard: React.FC<GameBoardProps> = ({
   const [newMessage, setNewMessage] = useState<string>('');
   const chatEndRef = useRef<HTMLDivElement>(null);
   const socketRef = useRef<any>(null);
+
+  // Add error handling for invalid game state
+  useEffect(() => {
+    if (!gameSettings.gameMode) {
+      console.error('Invalid game settings:', gameSettings);
+      navigate('/games');
+    }
+  }, [gameSettings, navigate]);
 
   // Rest of the component implementation...
   // Copy the remaining implementation from GameBoard.js

@@ -30,8 +30,16 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
 // Wrapper component to pass URL parameters to GameBoard
 const GameBoardWrapper: React.FC = () => {
   const { gameId } = useParams<{ gameId: string }>();
-  return <GameBoard gameMode="player" providedGameId={gameId} />;
+  return <GameBoard providedGameId={gameId} />;
 };
+
+// Temporary Tournaments component
+const Tournaments: React.FC = () => (
+  <Box p={3}>
+    <h1>Tournaments</h1>
+    <p>Coming soon! Tournament functionality is under development.</p>
+  </Box>
+);
 
 const Routes: React.FC = () => {
   return (
@@ -70,6 +78,14 @@ const Routes: React.FC = () => {
             element={
               <ProtectedRoute>
                 <GameBoardWrapper />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/tournaments"
+            element={
+              <ProtectedRoute>
+                <Tournaments />
               </ProtectedRoute>
             }
           />
